@@ -1,68 +1,100 @@
-# 🚀 Deployment Guide
+# 🚀 Deployment Guide (Hugging Face + Vercel — 100% Free)
 
 This app has **two parts** that deploy separately:
 
 | Part | Folder | Host | Why |
 |------|--------|------|-----|
-| Backend (FastAPI) | `backend/` | **Render** | Runs Python + ChromaDB + SQLite |
+| Backend (FastAPI) | `backend/` | **Hugging Face Spaces** (Docker) | Runs Python + ChromaDB + SQLite |
 | Frontend (React) | `frontend/` | **Vercel** | Serves the static built site |
 
-Both are **free** and **auto-deploy** from your GitHub repo (`bakshaya193-sketch/AI-PROJECTS`).
-
-> Deploy the **backend first**, because the frontend needs the backend's URL.
+Both are **free**. Deploy the **backend first**, because the frontend needs the backend's URL.
 
 ---
 
-## Part 1 — Deploy the Backend on Render
+## Part 1 — Deploy the Backend on Hugging Face Spaces
 
-1. Go to **https://render.com** and sign up (use **"Sign in with GitHub"**).
-2. Click **New +** → **Web Service**.
-3. Connect your GitHub and select the **`AI-PROJECTS`** repo.
-4. Fill in the settings:
-   - **Name:** `ai-support-backend` (or anything)
-   - **Root Directory:** `backend`
-   - **Runtime:** `Python 3`
-   - **Build Command:** `pip install -r requirements.txt`
-   - **Start Command:** `uvicorn main:app --host 0.0.0.0 --port $PORT`
-   - **Instance Type:** `Free`
-5. Scroll to **Environment Variables** and add:
-   | Key | Value |
-   |-----|-------|
-   | `OPENAI_API_KEY` | your OpenAI key (`sk-...`) |
-   | `SITE_PASSWORD` | a password for the site gate (e.g. `welcome123`) |
-   | `SECRET_KEY` | any long random string |
-   | `PYTHON_VERSION` | `3.11.9` |
-   | `FRONTEND_URL` | *(leave blank for now — add after Part 2)* |
-6. Click **Create Web Service**. The first build takes ~5–10 minutes.
-7. When it's live, copy the URL at the top, e.g. **`https://ai-support-backend.onrender.com`**
-8. Test it: open `https://your-backend-url.onrender.com/health` → you should see `{"status":"healthy"}`
+### 1.1 Create the Space
+1. Sign up at **https://huggingface.co** (free).
+2. Go to **https://huggingface.co/new-space**.
+3. Fill in:
+   - **Space name:** `ai-support-backend`
+   - **License:** `mit` (or any)
+   - **Select the SDK:** **Docker** → **Blank** template
+   - **Hardware:** **CPU basic** (free)
+   - **Visibility:** Public
+4. Click **Create Space**. It will be at:
+   `https://huggingface.co/spaces/<your-username>/ai-support-backend`
+
+### 1.2 Add your secrets
+In the Space, go to **Settings → Variables and secrets** → **New secret**, and add:
+
+| Name | Value |
+|------|-------|
+| `OPENAI_API_KEY` | your OpenAI key (`sk-...`) |
+| `SITE_PASSWORD` | a password for the site gate (e.g. `welcome123`) |
+| `SECRET_KEY` | any long random string |
+| `FRONTEND_URL` | *(leave blank for now — add after Part 2)* |
+
+### 1.3 Get a Hugging Face access token
+1. Go to **https://huggingface.co/settings/tokens** → **New token**.
+2. Name it anything, role **Write**, click **Generate**.
+3. Copy it (looks like `hf_xxxxx`). You'll use it as your **password** when pushing.
+
+### 1.4 Push the backend code to the Space
+The Space is its own git repo. We push **only the `backend/` folder** into it.
+Run these in a terminal (replace `<USER>` with your HF username):
+
+```bash
+# Clone the empty Space repo next to your project
+cd c:\Users\aksha
+git clone https://huggingface.co/spaces/<USER>/ai-support-backend hf-space
+
+# Copy all backend files into the cloned Space
+xcopy /E /Y /I ai-customer-support-agent\backend\* hf-space\
+
+# Commit and push
+cd hf-space
+git add -A
+git commit -m "Deploy AI support backend"
+git push
+```
+
+When prompted:
+- **Username:** your Hugging Face username
+- **Password:** paste the **`hf_...` token** (not your account password)
+
+### 1.5 Wait for the build
+On the Space page, the **Building** indicator runs for ~5–10 min (it builds the Docker image). When it shows **Running**, your backend is live at:
+`https://<your-username>-ai-support-backend.hf.space`
+
+Test it: open `https://<your-username>-ai-support-backend.hf.space/health` → you should see `{"status":"healthy"}`.
 
 ---
 
 ## Part 2 — Deploy the Frontend on Vercel
 
 1. Go to **https://vercel.com** and sign up with **GitHub**.
-2. Click **Add New…** → **Project**, then import the **`AI-PROJECTS`** repo.
+2. Click **Add New… → Project**, import the **`AI-PROJECTS`** repo.
 3. Configure:
    - **Root Directory:** click **Edit** → select **`frontend`**
-   - **Framework Preset:** Vercel auto-detects **Vite** ✅
+   - **Framework Preset:** auto-detects **Vite** ✅
 4. Expand **Environment Variables** and add:
    | Key | Value |
    |-----|-------|
-   | `VITE_API_URL` | your Render backend URL (e.g. `https://ai-support-backend.onrender.com`) |
-5. Click **Deploy**. After ~1–2 minutes you'll get a URL like **`https://your-app.vercel.app`**
+   | `VITE_API_URL` | your HF Space URL, e.g. `https://<your-username>-ai-support-backend.hf.space` |
+5. Click **Deploy**. After ~1–2 min you get a URL like **`https://your-app.vercel.app`**
 
 ---
 
 ## Part 3 — Connect Them (CORS)
 
-The backend must allow requests from your new frontend URL.
+The backend must allow requests from your frontend URL.
 
-1. Go back to **Render** → your backend service → **Environment**.
-2. Edit the **`FRONTEND_URL`** variable and set it to your Vercel URL, e.g. `https://your-app.vercel.app`
-3. Save — Render redeploys automatically.
+1. Go back to the **Hugging Face Space → Settings → Variables and secrets**.
+2. Edit **`FRONTEND_URL`** and set it to your Vercel URL, e.g. `https://your-app.vercel.app`
+3. The Space restarts automatically.
 
-Now open your **Vercel URL** → you'll see the 🔒 password gate → enter your `SITE_PASSWORD` → the app works end-to-end! 🎉
+Now open your **Vercel URL** → 🔒 password gate → enter your `SITE_PASSWORD` → the app works end-to-end! 🎉
 
 ---
 
@@ -75,30 +107,33 @@ Now open your **Vercel URL** → you'll see the 🔒 password gate → enter you
 | 👤 Customer 1 | `customer1` | `customer123` |
 | 👤 Customer 2 | `customer2` | `customer456` |
 
-⚠️ **Change these for a real deployment** (edit `backend/database.py`).
+⚠️ Change these for a real deployment (edit `backend/database.py`).
 
 ---
 
-## ⚠️ Important Caveats for the Free Tier
+## ⚠️ Free-Tier Caveats
 
-1. **Backend sleeps after 15 min idle.** Render's free tier spins down when unused, so the **first request after idle takes ~50 seconds** to wake up. The frontend may briefly show "Backend not connected" until it wakes.
+1. **The Space sleeps after ~48h of no traffic** → the first visit after sleeping takes ~30s to wake.
+2. **Data is not permanent.** SQLite + uploaded ChromaDB docs live on temporary disk and **reset on rebuild/restart**. Default users are always recreated on startup, so logins keep working. For permanent storage, add HF **persistent storage** (paid) or move to hosted Postgres + a vector DB.
+3. **Sentiment analysis** downloads small NLTK data on first use — the first chat may take a few extra seconds.
 
-2. **Data is not permanent.** The SQLite database and uploaded documents (ChromaDB) live on the server's temporary disk. On every redeploy or restart, **uploaded documents and chat history reset**. The default users are always recreated on startup, so logins keep working. For permanent storage you'd add a Render **persistent disk** (paid) or move to a hosted Postgres + vector DB.
-
-3. **Sentiment analysis** downloads small NLTK data on first use — the very first chat may take a few extra seconds.
-
-These are all fine for a **portfolio demo**. For production, upgrade to paid instances with persistent storage.
+Fine for a **portfolio demo**.
 
 ---
 
-## Updating Your Deployed App
+## Updating the Deployed App
 
-Both hosts auto-deploy when you push to GitHub:
+- **Frontend (Vercel):** auto-deploys on every `git push` to GitHub.
+- **Backend (HF Space):** re-run the copy + push from step 1.4 whenever you change backend code:
+  ```bash
+  xcopy /E /Y /I ai-customer-support-agent\backend\* hf-space\
+  cd hf-space && git add -A && git commit -m "update" && git push
+  ```
 
-```bash
-git add -A
-git commit -m "your changes"
-git push
-```
+---
 
-Render rebuilds the backend, Vercel rebuilds the frontend — automatically. ✅
+## Alternative: Render (also free)
+
+Prefer Render instead of Hugging Face? A `render.yaml` blueprint is included in the repo root.
+See the git history of this file for the Render-specific steps, or use Render's
+"New → Blueprint" pointed at this repo with root directory `backend`.
