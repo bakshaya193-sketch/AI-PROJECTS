@@ -18,9 +18,16 @@ app = FastAPI(
     version="2.0.0",
 )
 
+# Allowed CORS origins. In production set FRONTEND_URL to your deployed frontend
+# URL (comma-separated for multiple). Localhost is always allowed for dev.
+default_origins = ["http://localhost:5173", "http://localhost:3000"]
+frontend_env = os.getenv("FRONTEND_URL", "")
+extra_origins = [u.strip() for u in frontend_env.split(",") if u.strip()]
+allowed_origins = default_origins + extra_origins
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -50,4 +57,6 @@ def health():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # Hosting platforms (Render, Railway, etc.) provide the port via $PORT
+    port = int(os.getenv("PORT", "8000"))
+    uvicorn.run(app, host="0.0.0.0", port=port)

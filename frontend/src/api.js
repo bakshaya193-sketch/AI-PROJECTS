@@ -1,6 +1,8 @@
 import axios from "axios";
 
-const BASE = "http://localhost:8000";
+// API base URL — uses the deployed backend URL in production (set VITE_API_URL
+// in your hosting env vars), and falls back to localhost for local development.
+const BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 const api = axios.create({ baseURL: BASE });
 

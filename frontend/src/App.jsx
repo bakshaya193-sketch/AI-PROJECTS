@@ -112,7 +112,7 @@ export default function App() {
       />
       {!connected && (
         <div className="connection-warning">
-          ⚠️ Backend not connected — make sure FastAPI is running on http://localhost:8000
+          ⚠️ Backend not connected — it may be starting up (free hosting can take ~50s to wake). Please wait a moment and refresh.
         </div>
       )}
       <main className="main-content">{renderPage()}</main>

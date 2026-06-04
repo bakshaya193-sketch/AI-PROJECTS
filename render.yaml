@@ -1,0 +1,21 @@
+# Render Blueprint for the FastAPI backend.
+# In Render, click "New +" -> "Blueprint" and point it at this repo to use these settings.
+services:
+  - type: web
+    name: ai-support-backend
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: OPENAI_API_KEY
+        sync: false          # you enter this in the Render dashboard
+      - key: SITE_PASSWORD
+        sync: false          # site access-gate password
+      - key: FRONTEND_URL
+        sync: false          # your Vercel frontend URL, e.g. https://your-app.vercel.app
+      - key: SECRET_KEY
+        generateValue: true  # Render auto-generates a secure JWT secret
