@@ -10,7 +10,7 @@ load_dotenv()
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from database import init_db
-from routes import auth, chat, upload, tickets, analytics, agent, config_route
+from routes import auth, chat, upload, tickets, analytics, agent, config_route, access
 
 app = FastAPI(
     title="AI Customer Support Agent v2",
@@ -33,6 +33,7 @@ app.include_router(tickets.router, tags=["Tickets"])
 app.include_router(analytics.router, tags=["Analytics"])
 app.include_router(agent.router, tags=["Agent"])
 app.include_router(config_route.router, tags=["Config"])
+app.include_router(access.router, tags=["Access"])
 
 init_db()
 

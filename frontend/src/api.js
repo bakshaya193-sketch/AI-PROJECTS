@@ -99,6 +99,10 @@ export const getConfig = () =>
 export const updateConfig = (data) =>
   api.put("/config", data).then((r) => r.data);
 
+// ── Site access gate ──────────────────────────────────────────────────────
+export const verifyAccess = (password) =>
+  api.post("/verify-access", { password }).then((r) => r.data);
+
 // ── Health ────────────────────────────────────────────────────────────────
 export const healthCheck = () =>
   api.get("/health").then((r) => r.data);

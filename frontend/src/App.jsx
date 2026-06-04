@@ -6,6 +6,7 @@ import TicketsPage from "./pages/TicketsPage";
 import AgentDashboard from "./pages/AgentDashboard";
 import AnalyticsDashboard from "./pages/AnalyticsDashboard";
 import LoginPage from "./pages/LoginPage";
+import SiteGate from "./components/SiteGate";
 import { healthCheck, getConfig } from "./api";
 import "./styles/App.css";
 
@@ -24,6 +25,8 @@ export default function App() {
   const [connected, setConnected] = useState(false);
   const [user, setUser] = useState(null);
   const [config, setConfig] = useState({});
+  // Site-wide access gate — unlocked for the current browser session
+  const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem("site_unlocked") === "yes");
 
   useEffect(() => {
     // One-time cleanup: remove the legacy shared session key that leaked
@@ -91,6 +94,11 @@ export default function App() {
       default:               return <ChatPage user={user} />;
     }
   };
+
+  // Show the password gate first — nothing else renders until unlocked
+  if (!unlocked) {
+    return <SiteGate onUnlock={() => setUnlocked(true)} companyName={config.company_name} />;
+  }
 
   return (
     <div className="app">
