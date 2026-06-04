@@ -227,16 +227,35 @@ async def chat(request: ChatRequest, background_tasks: BackgroundTasks):
             "Do not make up answers. Be concise and helpful."
         )
 
-    ai_response = get_openai().chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": f"Context:\n{context or 'No documents uploaded yet.'}\n\nQuestion: {english_question}"},
-        ],
-        temperature=0.7,
-        max_tokens=500,
-    )
-    answer_en = ai_response.choices[0].message.content
+    try:
+        ai_response = get_openai().chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": f"Context:\n{context or 'No documents uploaded yet.'}\n\nQuestion: {english_question}"},
+            ],
+            temperature=0.7,
+            max_tokens=500,
+        )
+        answer_en = ai_response.choices[0].message.content
+    except Exception as e:
+        # Surface the real OpenAI error instead of a generic 500
+        err_type = type(e).__name__
+        err_msg = str(e)
+        print(f"[OpenAI error] {err_type}: {err_msg}")  # shows in Space logs
+        if "quota" in err_msg.lower() or "insufficient" in err_msg.lower():
+            friendly = "⚠️ The AI service is temporarily unavailable (API quota exceeded). Please contact the administrator."
+        elif "api_key" in err_msg.lower() or "authentication" in err_msg.lower() or "401" in err_msg:
+            friendly = "⚠️ The AI service is not configured correctly (API key issue). Please contact the administrator."
+        else:
+            friendly = f"⚠️ AI service error: {err_type}. Please try again later."
+        answer = translate_from_english(friendly, detected_lang)
+        _save_message(conv_id, "bot", answer, friendly, detected_lang, "neutral", 0.0)
+        return ChatResponse(
+            answer=answer, sources=[], ticket_created=False, ticket_id=None,
+            session_id=session_id, detected_language=detected_lang,
+            sentiment=sentiment, sentiment_score=score, escalated=False,
+        )
 
     # 7. Translate answer back to user's language
     answer = translate_from_english(answer_en, detected_lang)
