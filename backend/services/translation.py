@@ -7,24 +7,27 @@ Uses langdetect for detection and deep-translator for translation.
 def detect_language(text: str) -> str:
     """
     Detect language of text. Returns ISO 639-1 code (e.g. 'en', 'es').
-    Defaults to 'en' for short or ambiguous text to avoid misdetection.
+    Biased toward English because short phrases are very easy to misdetect
+    (e.g. langdetect reading "will i get a refund?" as Welsh).
     """
-    # Too short to reliably detect — default to English
-    if len(text.strip()) < 20:
+    cleaned = text.strip()
+
+    # Short text is unreliable to detect — default to English
+    if len(cleaned) < 30:
         return "en"
 
     try:
-        from langdetect import detect, detect_langs
-        # Get probabilities for all detected languages
-        langs = detect_langs(text)
+        from langdetect import detect_langs, DetectorFactory
+        DetectorFactory.seed = 0  # make detection deterministic
 
+        langs = detect_langs(cleaned)
         if not langs:
             return "en"
 
         top = langs[0]
 
-        # Only trust detection if confidence is high enough
-        if top.prob < 0.85:
+        # Require high confidence before switching away from English
+        if top.prob < 0.90:
             return "en"
 
         return str(top.lang)
