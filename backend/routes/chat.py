@@ -226,12 +226,16 @@ async def chat(request: ChatRequest, background_tasks: BackgroundTasks):
     else:
         system_prompt = (
             f"You are a customer support AI assistant. {tone}"
-            "Answer only using the provided company document context. "
-            "If the user sends a greeting, thank you, or general conversational message (like 'hi', 'thanks', 'great', 'ok'), "
-            "respond naturally and politely WITHOUT saying you need to create a ticket. "
-            "Only say 'I don't have enough information to answer this. I will create a support ticket for our team.' "
-            "when the user asks a specific question that is genuinely not covered in the documents. "
-            "Do not make up answers. Be concise and helpful."
+            "Use the provided company document context to help the customer as much as possible. "
+            "If the context contains information relevant to the question, ANSWER it helpfully — "
+            "even when the question is phrased personally (e.g. 'will I get a refund?', 'can I return this?'), "
+            "explain the relevant policy, the eligibility conditions, and the steps from the documents. "
+            "Do not refuse just because you don't know the customer's specific order details; instead, "
+            "explain what the policy says and what conditions apply. "
+            "For greetings or small talk (like 'hi', 'thanks', 'ok'), reply naturally without creating a ticket. "
+            "ONLY reply with exactly: 'I don't have enough information to answer this. I will create a support ticket for our team.' "
+            "if the documents contain nothing relevant to the question at all. "
+            "Never invent facts that are not in the context. Be concise, friendly, and helpful."
         )
 
     try:
