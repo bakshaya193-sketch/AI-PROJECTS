@@ -28,7 +28,12 @@ _openai_client = None
 def get_openai():
     global _openai_client
     if _openai_client is None:
-        _openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        # timeout + retries make the connection more resilient in cloud containers
+        _openai_client = OpenAI(
+            api_key=os.getenv("OPENAI_API_KEY"),
+            timeout=60.0,
+            max_retries=3,
+        )
     return _openai_client
 
 AGENT_KEYWORDS = [
@@ -242,13 +247,14 @@ async def chat(request: ChatRequest, background_tasks: BackgroundTasks):
         # Surface the real OpenAI error instead of a generic 500
         err_type = type(e).__name__
         err_msg = str(e)
-        print(f"[OpenAI error] {err_type}: {err_msg}")  # shows in Space logs
+        cause = repr(getattr(e, "__cause__", ""))
+        print(f"[OpenAI error] {err_type}: {err_msg} | cause: {cause}")  # shows in Space logs
         if "quota" in err_msg.lower() or "insufficient" in err_msg.lower():
             friendly = "⚠️ The AI service is temporarily unavailable (API quota exceeded). Please contact the administrator."
         elif "api_key" in err_msg.lower() or "authentication" in err_msg.lower() or "401" in err_msg:
             friendly = "⚠️ The AI service is not configured correctly (API key issue). Please contact the administrator."
         else:
-            friendly = f"⚠️ AI service error: {err_type}. Please try again later."
+            friendly = f"⚠️ AI service error: {err_type} — {err_msg or cause}. Please try again later."
         answer = translate_from_english(friendly, detected_lang)
         _save_message(conv_id, "bot", answer, friendly, detected_lang, "neutral", 0.0)
         return ChatResponse(

@@ -2,6 +2,12 @@
 # HF Docker Spaces serve the app on port 7860.
 FROM python:3.11-slim
 
+# Install CA certificates so HTTPS calls to the OpenAI API work reliably
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates curl && \
+    update-ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
 # Hugging Face Spaces best practice: run as a non-root user (uid 1000)
 RUN useradd -m -u 1000 user
 USER user
