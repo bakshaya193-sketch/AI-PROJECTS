@@ -8,6 +8,7 @@ Chat endpoint with:
 - Background notifications
 """
 import os
+import re
 import uuid
 from datetime import datetime
 from typing import Optional
@@ -37,6 +38,15 @@ def get_openai():
             max_retries=3,
         )
     return _openai_client
+
+# Short acknowledgements / greetings that should NEVER create a ticket
+SMALL_TALK = {
+    "ok", "okay", "kk", "k", "thanks", "thank you", "thankyou", "ty", "thx",
+    "great", "cool", "nice", "good", "got it", "alright", "all right", "fine",
+    "yes", "no", "yep", "nope", "sure", "perfect", "awesome", "hmm", "oh",
+    "hi", "hii", "hey", "hello", "yo", "good morning", "good evening",
+    "good afternoon", "bye", "goodbye", "see you", "np", "no problem", "welcome",
+}
 
 AGENT_KEYWORDS = [
     "talk to agent", "human agent", "real person", "speak to someone",
@@ -193,6 +203,27 @@ async def chat(request: ChatRequest, background_tasks: BackgroundTasks):
             routed_to_agent=True,
         )
     _save_message(conv_id, "user", question, english_question, detected_lang, sentiment, score)
+
+    # 4b. Small talk / acknowledgements — reply naturally, NEVER create a ticket.
+    # Strip emojis & punctuation, keep only letters/spaces, then compare.
+    cleaned = re.sub(r"[^a-z\s]", "", english_question.lower()).strip()
+    cleaned = re.sub(r"\s+", " ", cleaned)
+    if cleaned in SMALL_TALK or len(cleaned.replace(" ", "")) <= 2:
+        if any(g in cleaned.split() for g in ["hi", "hii", "hey", "hello", "yo", "morning", "evening", "afternoon"]):
+            reply_en = "Hello! How can I help you today?"
+        elif any(t in cleaned for t in ["thank", "thx", "ty"]):
+            reply_en = "You're welcome! Is there anything else I can help you with? 😊"
+        elif any(b in cleaned for b in ["bye", "goodbye", "see you"]):
+            reply_en = "Goodbye! Have a great day. 😊"
+        else:
+            reply_en = "Great! Let me know if you have any other questions. 😊"
+        reply = translate_from_english(reply_en, detected_lang)
+        _save_message(conv_id, "bot", reply, reply_en, detected_lang, "neutral", 0.0)
+        return ChatResponse(
+            answer=reply, sources=[], ticket_created=False, ticket_id=None,
+            session_id=session_id, detected_language=detected_lang,
+            sentiment=sentiment, sentiment_score=score, escalated=False,
+        )
 
     # 5. RAG: search ChromaDB
     try:

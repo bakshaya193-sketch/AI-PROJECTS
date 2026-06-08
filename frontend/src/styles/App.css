@@ -112,6 +112,8 @@ body { font-family: var(--font-family); background:var(--light-bg); color:var(--
 
 /* ── Phone ────────────────────────────────────────────── */
 @media(max-width:640px){
+  /* 16px inputs stop iOS Safari from auto-zooming when typing */
+  input, textarea, select { font-size:16px !important; }
   .main-content{padding:.6rem;}
   .nav-container{padding:.5rem .6rem;gap:.4rem;flex-wrap:nowrap;}
   .logo-icon{font-size:1.25rem;}
