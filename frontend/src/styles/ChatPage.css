@@ -1,5 +1,6 @@
-/* Fills the main content area exactly; only .chat-messages scrolls */
-.chat-page { display:flex; flex-direction:column; flex:1; min-height:0; background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow-md); overflow:hidden; }
+/* Fills the height; centered with a comfortable max-width so it looks like a
+   polished chat widget on large screens and full-width on phones */
+.chat-page { display:flex; flex-direction:column; flex:1; min-height:0; width:100%; max-width:880px; align-self:center; background:var(--white); border-radius:var(--radius); box-shadow:var(--shadow-md); overflow:hidden; }
 .chat-header { background:linear-gradient(135deg,var(--primary-color),var(--primary-dark)); color:var(--white); padding:1rem 1.5rem; flex-shrink:0; }
 .chat-header-top { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; }
 .chat-header h1 { font-size:1.5rem; margin-bottom:.2rem; }
